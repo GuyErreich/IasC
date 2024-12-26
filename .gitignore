@@ -26,3 +26,8 @@ secret.auto.tfvars
 
 .vscode/
 .fleet/
+
+.task/
+layer/
+zips/
+*.zip

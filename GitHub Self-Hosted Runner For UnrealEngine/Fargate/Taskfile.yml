@@ -4,63 +4,74 @@ version: '3'
 output: prefixed
 
 vars:
-  REGION:   '{{ default "eu-central-1" .REGION }}'
-  ACCOUNT_ID: 
-    sh: aws sts get-caller-identity --query Account --output text
-  REPO:     '{{.ACCOUNT_ID}}dkr.ecr.{{.REGION}}.amazonaws.com'
+  LAMBDA_FUNCTION_DIR: 'Lambda_Functions'
+  LAMBDA_LAYER_DIR: '{{.LAMBDA_FUNCTION_DIR}}/layer'
+  LAMBDA_LAYER_REQUIREMENTS: '{{.LAMBDA_FUNCTION_DIR}}/requirements.txt'
+  LAMBDA_ZIP_DIR: '{{.LAMBDA_FUNCTION_DIR}}/zips'
+  LAMBDA_FUNCTION_ZIP_NAME: 'functions'
+  LAMBDA_LAYER_ZIP_NAME: 'layer'
+  LAMBDA_FUNCTION_ZIP_PATH: '{{.LAMBDA_ZIP_DIR}}/{{.LAMBDA_FUNCTION_ZIP_NAME}}.zip'
+  LAMBDA_LAYER_ZIP_PATH: '{{.LAMBDA_ZIP_DIR}}/{{.LAMBDA_LAYER_ZIP_NAME}}.zip'
   PLAN_FILE: 'aws_fargate.tfplan'
-  LAMBDA_FOLDER: './Lambda_Functions'
-  LAMBDA_FILE_NAME: 'lambda.zip'
-  LAMBDA_LAYER_FOLDER: './Lambda_Functions/layer'
-  LAMBDA_LAYER_FILE_NAME: 'layer.zip'
 
 tasks:
   init:
-    desc: Initialize Terraform
-    run: once
-    cmd: terraform init {{.CLI_ARGS}}
+    desc: Initialize Terraform (including plugin installation)
+    cmds: 
+      - terraform init -upgrade {{.CLI_ARGS}}
 
   validate:
-    desc: Initialize Terraform
-    run: once
-    cmd: terraform validate
+    desc: Validate Terraform configuration
+    cmds: 
+      - terraform validate {{.CLI_ARGS}}
 
   plan:
-    desc: Initialize Terraform
-    run: when_changed
+    desc: Generate and review Terraform plan
     deps:
       - zip_lambda_function
       - zip_lambda_layer
-    cmd: >
-      terraform plan
-      -out={{.PLAN_FILE}}
-      -var "lambda_zip={{.LAMBDA_FOLDER}}/{{.LAMBDA_FILE_NAME}}"
-      -var "lambda_layer_zip={{.LAMBDA_LAYER_FOLDER}}/{{.LAMBDA_LAYER_FILE_NAME}}"
-      {{.CLI_ARGS}}
+    cmds:
+      - terraform plan {{.CLI_ARGS}} -out={{.PLAN_FILE}} -var="lambda_layer_zip={{.LAMBDA_LAYER_ZIP_PATH}}" -var="lambda_zip={{.LAMBDA_FUNCTION_ZIP_PATH}}"
 
   apply:
-    desc: Initialize Terraform
-    run: when_changed
-    deps:
-      - plan
-    prompt: Please make sure you went over the plan logs before continue, apply at your own risk!
-    cmd: terraform apply "{{.PLAN_FILE}}"
+    desc: Apply Terraform plan if it exists
+    preconditions:
+      - sh: test -f "{{.PLAN_FILE}}"
+        msg: "Plan file '{{.PLAN_FILE}}' not found. Run 'task plan' first."
+    prompt: Please make sure to go over the plan logs before continuing!
+    cmds:
+      - terraform apply {{.PLAN_FILE}} {{.CLI_ARGS}}
+    sources:
+      - '{{.PLAN_FILE}}'
 
   zip_lambda_function:
-    desc: Pack all the lambda files
-    run: once
+    desc: Package Lambda function code into a zip file
     internal: true
-    cmd: >
-      cd {{.LAMBDA_FOLDER}} &&
-      rm -rf {{.LAMBDA_FILE_NAME}} &&
-      zip -r {{.LAMBDA_FILE_NAME}} . -i ./*.py
+    cmds:
+      - |
+        echo "Zipping Lambda function code..."
+        mkdir -p {{.LAMBDA_ZIP_DIR}}  # Ensure the zip directory exists
+        rm -f {{.LAMBDA_FUNCTION_ZIP_PATH}} | true
+        cd {{.LAMBDA_FUNCTION_DIR}}
+        zip -r ../{{.LAMBDA_FUNCTION_ZIP_PATH}} *.py
+    sources:
+     - '{{.LAMBDA_FUNCTION_DIR}}/*.py'
+    generates:
+      - '{{.LAMBDA_FUNCTION_ZIP_PATH}}'
 
   zip_lambda_layer:
-    desc: Pack all the lambda files
-    run: once
+    desc: Package Lambda layer dependencies into a zip file
     internal: true
-    cmd: >
-      cd {{.LAMBDA_LAYER_FOLDER}} &&
-      rm -rf {{.LAMBDA_LAYER_FILE_NAME}} &&
-      pip install -r ../requirements.txt -t . &&   
-      zip -r {{.LAMBDA_LAYER_FILE_NAME}} .
+    cmds:
+      - |
+        echo "Installing dependencies for Lambda layer..."
+        pip install -r {{.LAMBDA_LAYER_REQUIREMENTS}} -t {{.LAMBDA_LAYER_DIR}}/python --upgrade
+        echo "Zipping Lambda layer..."
+        mkdir -p {{.LAMBDA_ZIP_DIR}}  # Ensure the zip directory exists
+        rm -f {{.LAMBDA_LAYER_ZIP_PATH}} | true
+        cd {{.LAMBDA_LAYER_DIR}}
+        zip -r ../../{{.LAMBDA_LAYER_ZIP_PATH}} python
+    sources:
+     - '{{.LAMBDA_LAYER_REQUIREMENTS}}'
+    generates:
+      - '{{.LAMBDA_LAYER_ZIP_PATH}}'

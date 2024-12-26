@@ -1,8 +1,3 @@
-variable "aws_region" {
-  description = "AWS region(s) to deploy resources"
-  type        = string
-}
-
 variable "github_org" {
   description = "GitHub organization to register the runner with"
   type        = string

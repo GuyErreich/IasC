@@ -1,6 +1,6 @@
 module "github_webhook_handler" {
     depends_on = [ aws_lambda_layer_version.requests_layer ]
-    source                  = "./webhook_handler"
+    source                  = "../../Modules/AWS/webhook_handler"
 
     api_name                = "GitHubWebhookHandler"
     lambda_zip_path         = "${var.lambda_zip}"
@@ -56,3 +56,4 @@ resource "aws_lambda_layer_version" "requests_layer" {
   compatible_runtimes = ["python3.9"]                    # Update the runtime version as needed
   description       = "Lambda layer with requests library"
 }
+

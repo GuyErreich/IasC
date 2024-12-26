@@ -17,7 +17,7 @@ data "aws_secretsmanager_secret_version" "github_webhook_token" {
 }
 
 data "aws_secretsmanager_secret" "github_runner_token" {
-  name = "github_runner"
+  name = "github/runner_token"
 }
 
 data "aws_secretsmanager_secret_version" "github_runner_token" {

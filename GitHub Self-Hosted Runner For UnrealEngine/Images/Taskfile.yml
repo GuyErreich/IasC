@@ -12,7 +12,6 @@ vars:
 tasks:
   ecr-login:
     desc: Log in to the Amazon ECR
-    run: when_changed
     internal: true
     cmds:
       - echo "Logging in to Amazon ECR..."
@@ -23,8 +22,7 @@ tasks:
 
 
   build:
-    desc: Build the given docker file
-    run: when_changed
+    desc: Build the given Dockerfile
     interactive: true
     cmds:
       - docker build -t {{.IMAGE_NAME}}:{{.TAG}} -f {{.FILE}} {{.CONTEXT}}
@@ -36,10 +34,8 @@ tasks:
         - TAG
         - FILE
 
-
   push:
     desc: Push a Docker image to the Amazon ECR
-    run: when_changed
     interactive: true
     deps:
       - ecr-login
