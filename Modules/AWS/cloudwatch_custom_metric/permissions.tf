@@ -1,5 +1,5 @@
 resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_lambda" {
-  depends_on = [ 
+  depends_on = [
     aws_lambda_function.metric_generator,
     aws_cloudwatch_event_rule.event_rule
   ]
@@ -12,7 +12,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_lambda" {
 }
 
 resource "aws_lambda_permission" "allow_sns_to_invoke_lambda" {
-  depends_on = [ 
+  depends_on = [
     aws_lambda_function.alarm_handler,
     aws_sns_topic.custom_cloudwatch_topic
   ]

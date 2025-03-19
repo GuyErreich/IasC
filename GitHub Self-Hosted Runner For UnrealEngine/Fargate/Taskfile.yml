@@ -25,6 +25,11 @@ tasks:
     cmds: 
       - terraform validate {{.CLI_ARGS}}
 
+  format:
+    desc: Validate Terraform configuration
+    cmds: 
+      - terraform fmt -recursive {{.CLI_ARGS}}
+
   plan:
     desc: Generate and review Terraform plan
     deps:
@@ -32,6 +37,9 @@ tasks:
       - zip_lambda_layer
     cmds:
       - terraform plan {{.CLI_ARGS}} -out={{.PLAN_FILE}} -var="lambda_layer_zip={{.LAMBDA_LAYER_ZIP_PATH}}" -var="lambda_zip={{.LAMBDA_FUNCTION_ZIP_PATH}}"
+
+  pluralith:
+    -  sudo pluralith graph {{.CLI_ARGS}} --var='lambda_layer_zip={{.LAMBDA_LAYER_ZIP_PATH}}' --var='lambda_zip={{.LAMBDA_FUNCTION_ZIP_PATH}}'
 
   apply:
     desc: Apply Terraform plan if it exists
@@ -43,6 +51,14 @@ tasks:
       - terraform apply {{.PLAN_FILE}} {{.CLI_ARGS}}
     sources:
       - '{{.PLAN_FILE}}'
+
+  destroy:
+    desc: Generate and review Terraform refresh
+    deps:
+      - zip_lambda_function
+      - zip_lambda_layer
+    cmds:
+      - terraform destroy {{.CLI_ARGS}} -var="lambda_layer_zip={{.LAMBDA_LAYER_ZIP_PATH}}" -var="lambda_zip={{.LAMBDA_FUNCTION_ZIP_PATH}}"
 
   zip_lambda_function:
     desc: Package Lambda function code into a zip file
@@ -75,3 +91,101 @@ tasks:
      - '{{.LAMBDA_LAYER_REQUIREMENTS}}'
     generates:
       - '{{.LAMBDA_LAYER_ZIP_PATH}}'
+
+  # install:
+  #   desc: Install necessary tools (Terraform, AWS CLI, jq, iprange, etc.) on Debian-based Linux
+  #   sources:
+  #     - /usr/local/bin/terraform
+  #     - /usr/local/bin/aws
+  #     - /usr/local/bin/jq
+  #     - /usr/local/bin/iprange
+  #   generates:
+  #     - /usr/local/bin/terraform
+  #     - /usr/local/bin/aws
+  #     - /usr/local/bin/jq
+  #     - /usr/local/bin/iprange
+  #   cmds:
+  #     # Prompt for sudo password
+  #     - |
+  #       echo "Enter your sudo password (if prompted):"
+  #       sudo -v
+
+  #     # Install curl
+  #     - |
+  #       if ! command -v curl >/dev/null 2>&1; then
+  #         echo "Installing curl..."
+  #         sudo apt-get update && sudo apt-get install -y curl
+  #       else
+  #         echo "curl is already installed. Skipping."
+  #       fi
+
+  #     # Install zip
+  #     - |
+  #       if ! command -v zip >/dev/null 2>&1; then
+  #         echo "Installing zip..."
+  #         sudo apt-get update && sudo apt-get install -y zip
+  #       else
+  #         echo "zip is already installed. Skipping."
+  #       fi
+
+  #     # Install unzip
+  #     - |
+  #       if ! command -v unzip >/dev/null 2>&1; then
+  #         echo "Installing unzip..."
+  #         sudo apt-get update && sudo apt-get install -y unzip
+  #       else
+  #         echo "unzip is already installed. Skipping."
+  #       fi
+
+  #     # Install jq
+  #     - |
+  #       if ! command -v jq >/dev/null 2>&1; then
+  #         echo "Installing jq..."
+  #         sudo apt-get update && sudo apt-get install -y jq
+  #       else
+  #         echo "jq is already installed. Skipping."
+  #       fi
+
+  #     # Install iprange
+  #     - |
+  #       if ! command -v iprange >/dev/null 2>&1; then
+  #         echo "Installing iprange..."
+  #         sudo apt-get update && sudo apt-get install -y iprange
+  #       else
+  #         echo "iprange is already installed. Skipping."
+  #       fi
+
+
+  #     # Install Terraform
+  #     - |
+  #       if ! command -v terraform >/dev/null 2>&1 || [ "$(terraform --version | head -n 1 | awk '{print $2}')" != "v1.10.5" ]; then
+  #         if !  test -f /usr/share/keyrings/hashicorp-archive-keyring.gpg; then
+  #           echo "Adding HashiCorp GPG key..."
+  #           wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  #           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+  #         fi
+  #         echo "Installing Terraform..."
+  #         sudo apt-get update && sudo apt-get install -y terraform
+  #       else
+  #         echo "Terraform is already installed and up-to-date. Skipping."
+  #       fi
+
+  #     # Install AWS CLI
+  #     - |
+  #       if ! command -v aws >/dev/null 2>&1 || [ "$(aws --version 2>&1 | awk '{print $1}' | cut -d/ -f2)" != "2.19.2" ]; then
+  #         echo "Installing AWS CLI..."
+  #         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  #         unzip awscliv2.zip
+  #         rm -rf awscliv2.zip
+  #         sudo ./aws/install
+  #         rm -rf ./aws
+  #       else
+  #         echo "AWS CLI is already installed and up-to-date. Skipping."
+  #       fi 
+
+  #     # Verify installations
+  #     - echo "Verifying installations..."
+  #     - terraform --version
+  #     - aws --version
+  #     - jq --version
+  #     - iprange --version | true

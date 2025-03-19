@@ -5,8 +5,8 @@ resource "aws_iam_role" "lambda_exec" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "lambda.amazonaws.com"
         }
@@ -23,7 +23,7 @@ resource "aws_iam_policy" "lambda_policy" {
     Statement = concat(
       [
         {
-          Action   = [
+          Action = [
             "logs:CreateLogGroup",
             "logs:CreateLogStream",
             "logs:PutLogEvents"
@@ -37,7 +37,7 @@ resource "aws_iam_policy" "lambda_policy" {
         for policy in var.lambda_iam_role_policies : {
           Action   = policy.Action
           Effect   = policy.Effect
-          Resource = flatten(policy.Resource)  # Flatten the resources if they're lists
+          Resource = flatten(policy.Resource) # Flatten the resources if they're lists
         }
       ])
     )

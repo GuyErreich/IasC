@@ -16,7 +16,7 @@ variable "lambda_handler" {
 variable "lambda_layers" {
   description = "Lambda handler function"
   type        = list(string)
-  default = []
+  default     = []
 }
 
 
@@ -44,7 +44,7 @@ variable "timeout" {
 
 variable "lambda_function_env_vars" {
   description = "GitHub webhook secret"
-  type        = map
+  type        = map(any)
 }
 
 variable "api_name" {

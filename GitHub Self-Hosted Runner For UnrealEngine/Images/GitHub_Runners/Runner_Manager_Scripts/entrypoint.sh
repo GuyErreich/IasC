@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e  # Exit immediately on errors
+set -x
+set -o pipefail  # Ensure pipelines return errors if any command fails
+
 usage() {
     echo "Usage: $0 --repo <repository> --token <token> [-h]"
     echo "  --repo                      The url to the repo to register the runner too"
@@ -46,17 +50,47 @@ for arg in "REPO" "TOKEN" "RUNNER_NAME"; do
     fi
 done
 
+# NGINX_PROXY_IP=$(getent hosts nginx-proxy)
+# echo "DEBUG: Resolved nginx-proxy to $NGINX_PROXY_IP"
+
+# if [[ -z "$NGINX_PROXY_IP" ]]; then
+#     echo "Error: Failed to resolve nginx-proxy!"
+#     exit 1
+# fi
+
+# export HTTPS_PROXY="http://$NGINX_PROXY_IP:3128"
+
+# Proxy Configuration Debugging
+echo "Checking Proxy Settings..."
+if [[ -n "$HTTPS_PROXY" ]]; then
+    echo "Using HTTPS_PROXY: $HTTPS_PROXY"
+else
+    echo "WARNING: No HTTPS_PROXY is set. Ensure your container has access to the internet."
+fi
+
+echo "Checking Network Connectivity..."
+if ! curl -s --proxy "$HTTPS_PROXY" https://api.github.com; then
+    echo "Error: Unable to connect to GitHub via proxy!"
+    exit 1
+else
+    echo "GitHub API is reachable!"
+fi
+
+# TEST=$(curl --proxy "$HTTPS_PROXY" "https://geaapi.github.com") # testing to make sure it is blocked
+# echo "TEST: $TEST"
+
 if [[ "${FLAGS[ecs-task]}" == "true" ]]; then
     if [[ -z "${ECS_CONTAINER_METADATA_URI_V4}" ]]; then
         echo "Error: ECS_CONTAINER_METADATA_URI_V4 is not set."
         exit 1
     fi
-
-    TASK_METADATA=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task")
+    TASK_METADATA=$(curl -s --proxy "$HTTPS_PROXY" "$ECS_CONTAINER_METADATA_URI_V4/task")
     TASK_ID=$(echo "$TASK_METADATA" | jq -r '.TaskARN' | awk -F'/' '{print $3}')
+    
+    TEST=$(curl --proxy "$HTTPS_PROXY" "http://169.254.170.3/task") # testing to make sure it is blocked
+    echo "TEST: $TEST"
 
     echo "TASK_METADATA: $TASK_METADATA"
-
     echo "TASK_ID: $TASK_ID"
 
     if [[ -n "$TASK_ID" ]]; then
@@ -68,10 +102,13 @@ if [[ "${FLAGS[ecs-task]}" == "true" ]]; then
     fi
 fi
 
+echo "Configuring GitHub Actions Runner..."
 echo "Repo: $REPO"
+echo "Runner Name: $RUNNER_NAME"
+echo "Labels: $LABELS"
 
-# Fetch runner token
-RUNNER_TOKEN=$(curl -s -X POST \
+echo "Requesting GitHub Runner Token..."
+RUNNER_TOKEN=$(curl -s --proxy "$HTTPS_PROXY" -X POST \
   -H "Authorization: Bearer $TOKEN" \
   "https://api.github.com/repos/$REPO/actions/runners/registration-token" | jq -r '.token')
 
@@ -79,11 +116,11 @@ if [[ -z "$RUNNER_TOKEN" ]]; then
     echo "Error: Failed to fetch runner token."
     exit 1
 fi
+echo "GitHub Runner Token Retrieved."
 
 if [[ -z "$RUNNER_MANAGER_DIR" ]]; then
     RUNNER_MANAGER_DIR="$PWD"
 fi
-
 echo "RUNNER_MANAGER_DIR: $RUNNER_MANAGER_DIR"
 
 sudo sh -c "echo 'REPO=${REPO}' >> /etc/environment"
@@ -92,8 +129,18 @@ sudo sh -c "echo 'RUNNER_NAME=${RUNNER_NAME}' >> /etc/environment"
 sudo sh -c "echo 'RUNNER_TOKEN=${RUNNER_TOKEN}' >> /etc/environment"
 sudo sh -c "echo 'RUNNER_MANAGER_DIR=${RUNNER_MANAGER_DIR}' >> /etc/environment"
 
+echo "Starting Supervisor..."
 source $RUNNER_MANAGER_DIR/start_supervisor.sh
 
-cd actions-runner || { echo "Error: Directory 'actions-runner' not found."; exit 1; }
-github-runner-config --unattended --replace --url "https://github.com/$REPO" --token "$RUNNER_TOKEN" --name "$RUNNER_NAME" ${LABELS:+--labels "$LABELS"}
-github-runner-run
+if [[ -d "actions-runner" ]]; then
+    echo "Configuring GitHub Actions Runner..."
+    cd actions-runner
+    github-runner-config --unattended --replace --url "https://github.com/$REPO" --token "$RUNNER_TOKEN" --name "$RUNNER_NAME" ${LABELS:+--labels "$LABELS"}
+    
+    echo "Starting GitHub Actions Runner..."
+    github-runner-run
+else
+    echo "Error: Directory 'actions-runner' not found."
+    exit 1
+fi
+

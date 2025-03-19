@@ -22,13 +22,13 @@ resource "aws_apigatewayv2_stage" "default_stage" {
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_log_group.arn
-    format          = jsonencode({
-      requestId     = "$context.requestId",
-      ip            = "$context.identity.sourceIp",
-      method        = "$context.httpMethod",
-      resourcePath  = "$context.resourcePath",
-      status        = "$context.status",
-      responseTime  = "$context.responseLatency"
+    format = jsonencode({
+      requestId    = "$context.requestId",
+      ip           = "$context.identity.sourceIp",
+      method       = "$context.httpMethod",
+      resourcePath = "$context.resourcePath",
+      status       = "$context.status",
+      responseTime = "$context.responseLatency"
     })
   }
 }

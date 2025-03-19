@@ -11,5 +11,12 @@ variable "roles" {
     subjects = list(string)
     policies = map(string)
   }))
+
+  validation {
+    condition = !anytrue([
+      for role_name in keys(var.roles) : role_name if role_name == "" && contains(data.aws_iam_roles.roles.names, role_name)
+    ])
+    error_message = "One or more IAM roles already exist in AWS. Please use a different role name."
+  }
 }
 

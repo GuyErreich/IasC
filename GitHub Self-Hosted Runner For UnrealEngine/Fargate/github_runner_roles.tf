@@ -16,7 +16,7 @@ module "github_runner_roles" {
         ECSServicePolicy = aws_iam_policy.ecs_update_service_policy.arn
       }
     }
-    GitHubActionsSecretManagerRole = {
+    GitHubActionsECRPullRole = {
       subjects = local.github_oidc_roles_subjects
       policies = {
         ECRServicePolicy = aws_iam_policy.ecr_pull_accesses.arn
@@ -32,7 +32,7 @@ module "github_runner_roles" {
 }
 
 resource "aws_iam_policy" "github_runner_secret_manager_policy" {
-  depends_on = [ module.ecs ]
+  depends_on = [module.ecs]
 
   name        = "GitHubRunnerSecretManagerAccessesPolicy"
   description = "Policy for accessing specific secrets that will be used by the GitHub runner"
@@ -41,8 +41,8 @@ resource "aws_iam_policy" "github_runner_secret_manager_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]

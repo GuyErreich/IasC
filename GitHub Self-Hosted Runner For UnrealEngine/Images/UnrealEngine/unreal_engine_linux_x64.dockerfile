@@ -1,7 +1,9 @@
+ARG GITHUB_RUNNER_IMAGE=github_runner:latest
+
 FROM ghcr.io/epicgames/unreal-engine:dev-slim-5.4.4 AS unreal
 
 # Use a base image with the necessary libraries for Unreal Engine
-FROM 961341519925.dkr.ecr.eu-central-1.amazonaws.com/ci-cd/github-runner:latest
+FROM ${GITHUB_RUNNER_IMAGE}
 
 # Set environment variables to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive

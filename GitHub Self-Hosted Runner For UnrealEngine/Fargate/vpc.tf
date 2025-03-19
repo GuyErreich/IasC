@@ -1,15 +1,15 @@
 # VPC module (optional, if you need a custom VPC for ECS)
 module "vpc" {
-  source              = "terraform-aws-modules/vpc/aws"
-  version             = "~> 5.0"
-  name                = "fargate-vpc"
-  cidr                = "10.0.0.0/16"
-  azs                 = data.aws_availability_zones.available.names
-  public_subnets      = var.public_subnets
-  private_subnets     = var.private_subnets
+  source          = "terraform-aws-modules/vpc/aws"
+  version         = "~> 5.0"
+  name            = "fargate-vpc"
+  cidr            = "10.0.0.0/16"
+  azs             = data.aws_availability_zones.available.names
+  public_subnets  = var.public_subnets
+  private_subnets = var.private_subnets
 
-  enable_nat_gateway  = var.enable_nat_gateway
-  single_nat_gateway  = var.single_nat_gateway
+  enable_nat_gateway = var.enable_nat_gateway
+  single_nat_gateway = var.single_nat_gateway
 }
 
 # NOTE: if you don't care about the costs you can use the ecs on private subnet in your vpc.

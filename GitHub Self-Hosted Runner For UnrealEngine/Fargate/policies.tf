@@ -1,13 +1,13 @@
 resource "aws_iam_policy" "ecr_pull_accesses" {
-  name = "ECRPullAccessesPolicy"
+  name        = "ECRPullAccessesPolicy"
   description = "Policy to allow pulling images from the ecr"
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
@@ -20,7 +20,7 @@ resource "aws_iam_policy" "ecr_pull_accesses" {
 }
 
 resource "aws_iam_policy" "ecs_update_service_policy" {
-  depends_on = [ module.ecs ]
+  depends_on = [module.ecs]
 
   name        = "ECSUpdateServicePolicy"
   description = "Policy to allow updating desired count of ECS service"
@@ -29,8 +29,8 @@ resource "aws_iam_policy" "ecs_update_service_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "ecs:UpdateService",
           "ecs:DescribeServices",
         ]
@@ -39,8 +39,8 @@ resource "aws_iam_policy" "ecs_update_service_policy" {
         ])
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "ecs:DescribeTasks",
           "ecs:StopTask"
         ]

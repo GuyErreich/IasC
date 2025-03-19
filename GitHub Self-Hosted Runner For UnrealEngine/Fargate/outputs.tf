@@ -17,3 +17,6 @@ output "ecs_cluster_id" {
   value = module.ecs.cluster_id
 }
 
+output "github_webhook_api_endpoint" {
+  value = module.github_webhook_handler.api_endpoint
+}
