@@ -1,0 +1,38 @@
+variable "github_org" {
+  description = "GitHub organization to register the runner with"
+  type        = string
+}
+
+variable "public_subnets" {
+  description = "Public subnets within the VPC where ECS tasks can launch."
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "private_subnets" {
+  description = "Private subnets within the VPC where ECS tasks can launch."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_nat_gateway" {
+  description = "Private subnets within the VPC where ECS tasks can launch."
+  type        = bool
+  default     = false
+}
+
+variable "single_nat_gateway" {
+  description = "Private subnets within the VPC where ECS tasks can launch."
+  type        = bool
+  default     = false
+}
+
+variable "lambda_zip" {
+  description = "The path to the lambda zip file"
+  type        = string
+}
+
+variable "lambda_layer_zip" {
+  description = "The path to the lambda layer zip file"
+  type        = string
+}

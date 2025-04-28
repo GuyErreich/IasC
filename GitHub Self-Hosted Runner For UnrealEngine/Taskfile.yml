@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3'
+
+includes:
+  fargate:
+    taskfile: ./Fargate
+    internal: false
+    dir: ./Fargate
+
+tasks:
+   deploy:
+    desc: Deploy the infrastructure
+    interactive: true
+    vars:
+      ECR_APPROVE: '{{if .ECR_APPROVE}}--yes{{else}}{{end}}'
+      IMAGE_APPROVE: '{{if .IMAGE_APPROVE}}--yes{{else}}{{end}}'
+      ECS_APPROVE: '{{if .ECS_APPROVE}}--yes{{else}}{{end}}'
+    cmds:
+      - task: fargate:init
+      - task: fargate:format
+      - task: fargate:format
+        vars:
+          CLI_ARGS: '../../Modules'
+      - task: fargate:validate
+
+
+      # - task: fargate:plan
+      #   vars:
+      #     CLI_ARGS: '-target=module.ecr'
+      # - task fargate:apply {{.ECR_APPROVE}}
+
+      # - task: fargate:plan
+      #   vars:
+      #     CLI_ARGS: '-target=null_resource.build_and_push_images'
+      # - task fargate:apply {{.IMAGE_APPROVE}}
+
+
+      # - task: fargate:plan 
+      #   vars:
+      #     CLI_ARGS: '-target=module.ecs'
+      # - task fargate:apply {{.ECS_APPROVE}}
+      
+
+      - task: fargate:plan
+      - task: fargate:apply
